@@ -1,4 +1,21 @@
+# Environments
 env/
 venv/
 .env
-pycache/
+.venv/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Logs and DB
+*.log
+*.sqlite3
