@@ -8,35 +8,79 @@ Volumétrie cible :
   - 2 000 produits
   - 5 000 commandes (avec lignes)
   - 5 000 paiements (5% d'échecs simulés)
+
+Usage :
+  python seed.py           # échoue si des données existent déjà
+  python seed.py --reset   # vide les tables puis re-génère
 """
 
+import argparse
 import os
 import random
+import sys
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta, timezone, datetime
 from decimal import Decimal
+from pathlib import Path
 
 import psycopg2
 from dotenv import load_dotenv
 from faker import Faker
 
-load_dotenv()
+# Charge le .env depuis la racine du projet (2 niveaux au-dessus de data/mock/)
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+
+# ---------------------------------------------------------------------------
+# Arguments
+# ---------------------------------------------------------------------------
+
+parser = argparse.ArgumentParser(description="Génère le mock data de la Marketplace.")
+parser.add_argument("--reset", action="store_true", help="Vide les tables avant de re-générer.")
+args = parser.parse_args()
 
 fake = Faker("fr_FR")
 random.seed(42)
 
 # ---------------------------------------------------------------------------
-# Connexion
+# Connexion + vérification que le conteneur est up
 # ---------------------------------------------------------------------------
 
-conn = psycopg2.connect(
-    dbname=os.getenv("POSTGRES_DB"),
-    user=os.getenv("POSTGRES_USER"),
-    password=os.getenv("POSTGRES_PASSWORD"),
-    host="localhost",
-    port=os.getenv("POSTGRES_PORT", 5432),
-)
+try:
+    conn = psycopg2.connect(
+        dbname=os.getenv("POSTGRES_DB"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        host="localhost",
+        port=os.getenv("POSTGRES_PORT", 5432),
+    )
+except psycopg2.OperationalError as e:
+    print(f"[ERREUR] Impossible de se connecter a PostgreSQL : {e}")
+    print("   -> Verifie que le conteneur est bien lance : docker compose up -d")
+    sys.exit(1)
+
 cur = conn.cursor()
+
+# ---------------------------------------------------------------------------
+# Idempotence : vérification ou reset
+# ---------------------------------------------------------------------------
+
+cur.execute("SELECT COUNT(*) FROM users;")
+existing = cur.fetchone()[0]
+
+if existing > 0:
+    if not args.reset:
+        print(f"[INFO] La base contient deja {existing} utilisateurs.")
+        print("   -> Lance avec --reset pour tout vider et re-generer.")
+        cur.close()
+        conn.close()
+        sys.exit(0)
+    print("[RESET] Vidage des tables...")
+    cur.execute("""
+        TRUNCATE payments, order_items, orders, products, producers, users
+        RESTART IDENTITY CASCADE;
+    """)
+    conn.commit()
+    print("  Tables videes\n")
 
 # ---------------------------------------------------------------------------
 # Constantes métier
@@ -89,7 +133,7 @@ def fake_password_hash() -> str:
 # 1. Utilisateurs (clients + producteurs)
 # ---------------------------------------------------------------------------
 
-print("→ Génération des utilisateurs...")
+print("-Génération des utilisateurs...")
 
 producer_ids = []
 client_ids   = []
@@ -125,13 +169,13 @@ cur.executemany(
     """,
     users_data,
 )
-print(f"  ✓ {len(users_data)} utilisateurs insérés")
+print(f"{len(users_data)} utilisateurs insérés")
 
 # ---------------------------------------------------------------------------
 # 2. Producteurs (profils étendus)
 # ---------------------------------------------------------------------------
 
-print("→ Génération des profils producteurs...")
+print("-Génération des profils producteurs...")
 
 producers_data = []
 producer_profile_ids = []  # UUID du profil producer (≠ user_id)
@@ -157,13 +201,13 @@ cur.executemany(
     """,
     producers_data,
 )
-print(f"  ✓ {len(producers_data)} profils producteurs insérés")
+print(f"{len(producers_data)} profils producteurs insérés")
 
 # ---------------------------------------------------------------------------
 # 3. Produits
 # ---------------------------------------------------------------------------
 
-print("→ Génération des produits...")
+print("-Génération des produits...")
 
 products_data = []
 product_ids   = []
@@ -196,13 +240,13 @@ cur.executemany(
     """,
     products_data,
 )
-print(f"  ✓ {len(products_data)} produits insérés")
+print(f"{len(products_data)} produits insérés")
 
 # ---------------------------------------------------------------------------
 # 4. Commandes + lignes de commande
 # ---------------------------------------------------------------------------
 
-print("→ Génération des commandes et lignes...")
+print("-Génération des commandes et lignes...")
 
 orders_data      = []
 order_items_data = []
@@ -257,13 +301,13 @@ cur.executemany(
     """,
     order_items_data,
 )
-print(f"  ✓ {len(orders_data)} commandes insérées ({len(order_items_data)} lignes)")
+print(f"{len(orders_data)} commandes insérées ({len(order_items_data)} lignes)")
 
 # ---------------------------------------------------------------------------
 # 5. Paiements (5% d'erreurs simulées)
 # ---------------------------------------------------------------------------
 
-print("→ Génération des paiements...")
+print("-Génération des paiements...")
 
 payments_data = []
 
@@ -290,7 +334,7 @@ cur.executemany(
     """,
     payments_data,
 )
-print(f"  ✓ {len(payments_data)} paiements insérés "
+print(f"{len(payments_data)} paiements insérés "
       f"({sum(1 for p in payments_data if p[3] == 'failed')} échecs simulés)")
 
 # ---------------------------------------------------------------------------
@@ -301,4 +345,4 @@ conn.commit()
 cur.close()
 conn.close()
 
-print("\n✅ Mock data généré avec succès.")
+print("\nMock data genere avec succes.")
