@@ -9,6 +9,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+.ipynb_checkpoints/
 
 # IDE / OS
 .vscode/
