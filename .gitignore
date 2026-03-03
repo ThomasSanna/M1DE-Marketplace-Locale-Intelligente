@@ -1,5 +1,22 @@
+# Environments
+env/
+venv/
 .env
+.venv/
+
+# Python artifacts
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
 .ipynb_checkpoints/
-.venv
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Logs and DB
+*.log
+*.sqlite3
