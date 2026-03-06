@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
@@ -32,8 +32,7 @@ class UserResponse(UserBase):
     updated_at: datetime
     last_login_at: Optional[datetime] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ---- Producer Schemas ---- #
 class ProducerBase(BaseModel):
@@ -53,8 +52,7 @@ class ProducerResponse(ProducerBase):
     created_at: datetime
     user: Optional[UserResponse] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ---- Product Schemas ---- #
 class ProductBase(BaseModel):
@@ -84,5 +82,4 @@ class ProductResponse(ProductBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
