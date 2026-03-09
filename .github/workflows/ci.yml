@@ -2,13 +2,27 @@
 
 on:
   pull_request:
-    branches: ["develop", "main"]
+    branches: ["dev", "main"]
   push:
-    branches: ["develop", "main"]
+    branches: ["dev", "main"]
 
 jobs:
   backend-check:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: MarketPlace
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: backend
@@ -33,7 +47,9 @@ jobs:
         run: python -c "import main"
 
       - name: Unit tests
-        run: pytest -q
+        run: |
+          export PYTHONPATH=$PYTHONPATH:.
+          pytest -q
 
   docker-build-backend:
     runs-on: ubuntu-latest
