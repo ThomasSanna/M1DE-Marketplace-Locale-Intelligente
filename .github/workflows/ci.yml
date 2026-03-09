@@ -54,6 +54,11 @@ jobs:
       - name: App import smoke test
         run: python -c "import main"
 
+      - name: Initialize Database Schema
+        run: |
+          export PYTHONPATH=$PYTHONPATH:.
+          python init_db.py
+
       - name: Unit tests
         run: |
           export PYTHONPATH=$PYTHONPATH:.
