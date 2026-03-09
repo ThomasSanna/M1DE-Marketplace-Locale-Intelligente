@@ -73,7 +73,7 @@ export default function Navbar() {
                   Connexion
                 </Button>
                 <Button size="sm" onClick={() => navigate("/register")}>
-                  S'inscrire
+                  S&apos;inscrire
                 </Button>
               </div>
             )}

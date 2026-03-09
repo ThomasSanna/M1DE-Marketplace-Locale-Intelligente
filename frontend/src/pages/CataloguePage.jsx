@@ -3,7 +3,6 @@ import { Search, Filter, ShoppingCart, MapPin } from "lucide-react";
 import { getProducts } from "../api/products";
 import { useCart } from "../context/CartContext";
 import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
 import Layout from "../components/Layout";
 

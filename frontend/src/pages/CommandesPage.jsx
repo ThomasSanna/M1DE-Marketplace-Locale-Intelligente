@@ -28,7 +28,7 @@ export default function CommandesPage() {
       .then((res) => setOrders(res.data))
       .catch(() => setError("Impossible de charger vos commandes"))
       .finally(() => setLoading(false));
-  }, [user, authLoading]);
+  }, [user, authLoading, navigate]);
 
   return (
     <Layout>
@@ -51,7 +51,7 @@ export default function CommandesPage() {
         <div className="text-center py-16">
           <Package className="h-16 w-16 text-gray-200 mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-gray-700 mb-2">Aucune commande</h2>
-          <p className="text-gray-500 mb-6">Vous n'avez pas encore passé de commande</p>
+          <p className="text-gray-500 mb-6">Vous n&apos;avez pas encore passé de commande</p>
           <Button onClick={() => navigate("/catalogue")}>Commencer mes achats</Button>
         </div>
       )}
