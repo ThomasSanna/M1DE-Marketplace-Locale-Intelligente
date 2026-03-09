@@ -16,5 +16,4 @@ def test_products_list_endpoint_exists():
     response = client.get("/api/v1/products/")
     assert response.status_code == 200
     payload = response.json()
-    assert isinstance(payload, dict)
-    assert "message" in payload
+    assert isinstance(payload, list)

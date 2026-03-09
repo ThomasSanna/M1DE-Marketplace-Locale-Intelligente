@@ -13,9 +13,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: MarketPlace
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
@@ -26,6 +26,14 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,6 +54,11 @@ jobs:
       - name: App import smoke test
         run: python -c "import main"
 
+      - name: Initialize Database Schema
+        run: |
+          export PYTHONPATH=$PYTHONPATH:.
+          python init_db.py
+
       - name: Unit tests
         run: |
           export PYTHONPATH=$PYTHONPATH:.
@@ -60,3 +73,38 @@ jobs:
 
       - name: Build backend image
         run: docker build -t marketplace-backend:sprint1 ./backend
+
+  frontend-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  docker-build-frontend:
+    runs-on: ubuntu-latest
+    needs: frontend-check
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build frontend image
+        run: docker build -t marketplace-frontend:sprint1 ./frontend
