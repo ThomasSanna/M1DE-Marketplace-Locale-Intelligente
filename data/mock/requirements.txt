@@ -6,3 +6,4 @@ matplotlib==3.10.8
 sqlalchemy==2.0.48
 ipykernel==7.2.0
 nbconvert==7.17.0
+scikit-learn==1.6.1
