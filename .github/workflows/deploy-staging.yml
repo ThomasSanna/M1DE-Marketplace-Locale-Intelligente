@@ -129,8 +129,22 @@ jobs:
   post-deploy-healthcheck:
     runs-on: ubuntu-latest
     needs: deploy-staging
-    if: ${{ secrets.STAGING_HEALTHCHECK_URL != '' }}
     steps:
-      - name: Healthcheck endpoint
+      - name: Skip if no healthcheck URL configured
+        id: check_url
+        env:
+          STAGING_HEALTHCHECK_URL: ${{ secrets.STAGING_HEALTHCHECK_URL }}
         run: |
-          curl -fsS "${{ secrets.STAGING_HEALTHCHECK_URL }}"
+          if [ -z "$STAGING_HEALTHCHECK_URL" ]; then
+            echo "STAGING_HEALTHCHECK_URL non defini, healthcheck ignore."
+            echo "has_url=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_url=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Healthcheck endpoint
+        if: ${{ steps.check_url.outputs.has_url == 'true' }}
+        env:
+          STAGING_HEALTHCHECK_URL: ${{ secrets.STAGING_HEALTHCHECK_URL }}
+        run: |
+          curl -fsS "$STAGING_HEALTHCHECK_URL"
