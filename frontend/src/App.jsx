@@ -7,6 +7,7 @@ import CataloguePage from './pages/CataloguePage';
 import PanierPage from './pages/PanierPage';
 import ProducteursPage from './pages/ProducteursPage';
 import CommandesPage from './pages/CommandesPage';
+import CommandeDetailPage from './pages/CommandeDetailPage';
 
 // Route protégée : redirige vers /login si non connecté
 function PrivateRoute({ children }) {
@@ -29,6 +30,7 @@ export default function App() {
         {/* Pages protégées */}
         <Route path="/panier" element={<PanierPage />} />
         <Route path="/mes-commandes" element={<PrivateRoute><CommandesPage /></PrivateRoute>} />
+        <Route path="/commandes/:id" element={<PrivateRoute><CommandeDetailPage /></PrivateRoute>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

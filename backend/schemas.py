@@ -83,3 +83,54 @@ class ProductResponse(ProductBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ---- Order Schemas ---- #
+class OrderItemCreate(BaseModel):
+    product_id: UUID
+    quantity: float = Field(..., gt=0)
+
+class OrderCreate(BaseModel):
+    items: List[OrderItemCreate] = Field(..., min_length=1)
+
+class ProductSummary(BaseModel):
+    id: UUID
+    name: str
+    category: str
+    unit: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class OrderItemResponse(BaseModel):
+    id: UUID
+    product_id: UUID
+    quantity: float
+    unit_price_snapshot: float
+    product: Optional[ProductSummary] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class OrderResponse(BaseModel):
+    id: UUID
+    client_id: UUID
+    status: str
+    total_amount: float
+    created_at: datetime
+    updated_at: datetime
+    confirmed_at: Optional[datetime] = None
+    delivered_at: Optional[datetime] = None
+    items: List[OrderItemResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+class PaymentCreate(BaseModel):
+    order_id: UUID
+
+class PaymentResponse(BaseModel):
+    id: UUID
+    order_id: UUID
+    amount: float
+    status: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
