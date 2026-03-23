@@ -1,5 +1,5 @@
 ﻿services:
-  # Base de donnees locale pour developpement et tests.
+  # Base de donnees staging (persistante via volume).
   postgres:
     image: postgres:16-alpine
     container_name: marketplace_db
@@ -8,38 +8,33 @@
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Charge le schema SQL au premier demarrage du volume postgres.
+      # Initialise le schema au premier demarrage du volume.
       - ./data/schema/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
-  # API FastAPI locale (build depuis ./backend).
+  # API backend deployee depuis l'image publiee par GitHub Actions.
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE:?BACKEND_IMAGE is required}
     container_name: marketplace_api
     depends_on:
       postgres:
         condition: service_healthy
     env_file: .env
     environment:
-      # Prioritaire: URL de connexion complete pour SQLAlchemy.
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      # Variable utilisee en fallback dans database.py.
       POSTGRES_HOST: postgres
     ports:
       - "8000:8000"
     restart: unless-stopped
 
-  # Frontend React servi par Nginx (build depuis ./frontend).
+  # Frontend deployee depuis l'image publiee par GitHub Actions.
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ${FRONTEND_IMAGE:?FRONTEND_IMAGE is required}
     container_name: marketplace_front
     depends_on:
       - backend
@@ -48,5 +43,5 @@
     restart: unless-stopped
 
 volumes:
-  # Conserve les donnees PostgreSQL entre les redemarrages.
+  # Conserve les donnees postgres entre redemarrages.
   postgres_data:
