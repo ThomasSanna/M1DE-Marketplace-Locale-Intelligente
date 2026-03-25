@@ -1,8 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import datetime
 from uuid import UUID
-from models import UserRole, ProductCategory, ProductUnit, OrderStatus
+from models import UserRole, ProductCategory, ProductUnit, PaymentStatus, OrderStatus
 
 class Token(BaseModel):
     access_token: str
@@ -120,3 +120,42 @@ class OrderResponse(BaseModel):
 
 class OrderStatusUpdate(BaseModel):
     status: OrderStatus
+
+
+# ---- Payment Schemas ---- #
+PaymentSimulationScenario = Literal[
+    "auto",
+    "success",
+    "insufficient_funds",
+    "provider_timeout",
+    "fraud_suspected",
+    "network_error",
+]
+
+
+class PaymentSimulationRequest(BaseModel):
+    order_id: UUID
+    payment_method: Literal["card", "wallet", "bank_transfer"] = "card"
+    idempotency_key: Optional[str] = Field(default=None, min_length=8, max_length=64)
+    simulate_scenario: PaymentSimulationScenario = "auto"
+    processing_delay_ms: int = Field(default=120, ge=0, le=2000)
+
+
+class PaymentSimulationResponse(BaseModel):
+    payment_id: UUID
+    order_id: UUID
+    status: PaymentStatus
+    order_status: OrderStatus
+    amount: float
+    idempotency_key: Optional[str] = None
+    simulated_latency_ms: int
+    retryable: bool = False
+    provider_reference: str
+
+
+class PaymentErrorResponse(BaseModel):
+    error_code: str
+    message: str
+    retryable: bool
+    order_id: UUID
+    provider_reference: str
