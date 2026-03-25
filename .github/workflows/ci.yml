@@ -34,6 +34,7 @@ jobs:
       POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
+      PYTHONPATH: .
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,14 +56,10 @@ jobs:
         run: python -c "import main"
 
       - name: Initialize Database Schema
-        run: |
-          export PYTHONPATH=$PYTHONPATH:.
-          python init_db.py
+        run: python init_db.py
 
       - name: Unit tests
-        run: |
-          export PYTHONPATH=$PYTHONPATH:.
-          python -m pytest -q tests/test_api.py
+        run: python -m pytest -q tests/test_api.py
 
   docker-build-backend:
     runs-on: ubuntu-latest

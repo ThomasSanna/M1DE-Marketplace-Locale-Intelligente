@@ -39,7 +39,7 @@ _CONTROLLED_ERROR_SCENARIOS = {
         "message": "Delai depasse du fournisseur de paiement.",
     },
     "fraud_suspected": {
-        "http_status": status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "http_status": status.HTTP_422_UNPROCESSABLE_CONTENT,
         "error_code": "FRAUD_SUSPECTED",
         "retryable": False,
         "message": "Transaction bloquee pour suspicion de fraude.",
