@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           # GHCR exige un nom de repository en minuscules.
-          REPO_LOWER="$(echo \"${GITHUB_REPOSITORY}\" | tr '[:upper:]' '[:lower:]')"
+          REPO_LOWER="$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')"
 
           # Pour un trigger PR, on tag avec le commit de merge.
           if [ "${{ github.event_name }}" = "pull_request" ]; then
