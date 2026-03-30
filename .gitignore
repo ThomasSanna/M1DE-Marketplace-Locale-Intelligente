@@ -20,3 +20,6 @@ __pycache__/
 # Logs and DB
 *.log
 *.sqlite3
+
+# Data pipeline outputs (generated figures)
+data/outputs/
