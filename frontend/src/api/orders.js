@@ -2,10 +2,10 @@ import apiClient from "./client";
 
 // POST /api/v1/orders
 export const createOrder = (orderData) =>
-  apiClient.post("/api/v1/orders", orderData);
+  apiClient.post("/api/v1/orders/", orderData);
 
 // GET /api/v1/orders
-export const getOrders = () => apiClient.get("/api/v1/orders");
+export const getOrders = () => apiClient.get("/api/v1/orders/");
 
 // GET /api/v1/orders/:id
 export const getOrderById = (id) => apiClient.get(`/api/v1/orders/${id}`);

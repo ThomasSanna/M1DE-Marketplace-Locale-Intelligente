@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { createOrder, processPayment } from "../api/orders";
 import { Button } from "../components/ui/Button";
 import Layout from "../components/Layout";
+import { getCategoryImage } from "../lib/categoryImages";
 
 export default function PanierPage() {
   const { items, removeItem, updateQuantity, clearCart, totalPrice } = useCart();
@@ -82,9 +83,13 @@ export default function PanierPage() {
         <div className="lg:col-span-2 space-y-4">
           {items.map(({ product, quantity }) => (
             <div key={product.id} className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center gap-4">
-              {/* Emoji catégorie */}
-              <div className="h-16 w-16 rounded-xl bg-primary-50 flex items-center justify-center text-3xl flex-shrink-0">
-                {{ fruits: "🍎", legumes: "🥦", viandes: "🥩", poissons: "🐟", produits_laitiers: "🧀", epicerie: "🫙", boissons: "🥤", autres: "📦" }[product.category] || "🛒"}
+              {/* Image catégorie */}
+              <div className="h-16 w-16 rounded-xl overflow-hidden flex-shrink-0">
+                <img
+                  src={getCategoryImage(product.category)}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               {/* Infos produit */}

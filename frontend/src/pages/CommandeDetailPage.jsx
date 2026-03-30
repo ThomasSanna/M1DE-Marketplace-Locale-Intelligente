@@ -5,6 +5,7 @@ import { getOrderById } from "../api/orders";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import Layout from "../components/Layout";
+import { getCategoryImage } from "../lib/categoryImages";
 
 const STATUS_MAP = {
   draft:     { label: "Brouillon",  variant: "default",  Icon: Clock },
@@ -14,10 +15,7 @@ const STATUS_MAP = {
   cancelled: { label: "Annulée",   variant: "danger",   Icon: XCircle },
 };
 
-const CATEGORY_EMOJI = {
-  fruits: "🍎", legumes: "🥦", viandes: "🥩", poissons: "🐟",
-  produits_laitiers: "🧀", epicerie: "🫙", boissons: "🥤", autres: "📦",
-};
+
 
 export default function CommandeDetailPage() {
   const { id } = useParams();
@@ -120,8 +118,12 @@ export default function CommandeDetailPage() {
           <div className="space-y-4">
             {order.items.map((item) => (
               <div key={item.id} className="flex items-center gap-3">
-                <div className="h-12 w-12 bg-primary-50 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
-                  {CATEGORY_EMOJI[item.product?.category] || "🛒"}
+                <div className="h-12 w-12 rounded-xl overflow-hidden flex-shrink-0">
+                  <img
+                    src={getCategoryImage(item.product?.category)}
+                    alt={item.product?.name || "Produit"}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 text-sm truncate">

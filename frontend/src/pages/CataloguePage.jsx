@@ -5,17 +5,18 @@ import { useCart } from "../context/CartContext";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import Layout from "../components/Layout";
+import { getCategoryImage } from "../lib/categoryImages";
 
 const CATEGORIES = [
   { value: "", label: "Toutes" },
-  { value: "fruits", label: "🍎 Fruits" },
-  { value: "legumes", label: "🥦 Légumes" },
-  { value: "viandes", label: "🥩 Viandes" },
-  { value: "poissons", label: "🐟 Poissons" },
-  { value: "produits_laitiers", label: "🧀 Laitiers" },
-  { value: "epicerie", label: "🫙 Épicerie" },
-  { value: "boissons", label: "🥤 Boissons" },
-  { value: "autres", label: "📦 Autres" },
+  { value: "fruits", label: "Fruits" },
+  { value: "legumes", label: "Légumes" },
+  { value: "viandes", label: "Viandes" },
+  { value: "poissons", label: "Poissons" },
+  { value: "produits_laitiers", label: "Laitiers" },
+  { value: "epicerie", label: "Épicerie" },
+  { value: "boissons", label: "Boissons" },
+  { value: "autres", label: "Autres" },
 ];
 
 function ProductCard({ product }) {
@@ -30,11 +31,14 @@ function ProductCard({ product }) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-      {/* Image placeholder */}
-      <div className="h-44 bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center">
-        <span className="text-5xl">
-          {{ fruits: "🍎", legumes: "🥦", viandes: "🥩", poissons: "🐟", produits_laitiers: "🧀", epicerie: "🫙", boissons: "🥤", autres: "📦" }[product.category] || "🛒"}
-        </span>
+      {/* Image produit */}
+      <div className="h-44 overflow-hidden">
+        <img
+          src={getCategoryImage(product.category)}
+          alt={product.name}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
       </div>
 
       <div className="p-4 flex flex-col flex-1">
