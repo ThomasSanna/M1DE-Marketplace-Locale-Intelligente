@@ -44,11 +44,34 @@ class FakeQuery:
         return [self._first_value]
 
 
+class FakeExecuteResult:
+    def __init__(self, payload):
+        self._payload = payload
+
+    def mappings(self):
+        return self
+
+    def first(self):
+        if self._payload is None:
+            return None
+        if isinstance(self._payload, list):
+            return self._payload[0] if self._payload else None
+        return self._payload
+
+    def all(self):
+        if self._payload is None:
+            return []
+        if isinstance(self._payload, list):
+            return self._payload
+        return [self._payload]
+
+
 class FakeSession:
-    def __init__(self, orders=None, products=None, producer=None):
+    def __init__(self, orders=None, products=None, producer=None, execute_results=None):
         self.orders = orders or []
         self.products = products or []
         self.producer = producer
+        self.execute_results = execute_results or {}
 
     def query(self, model):
         if model is models.Order:
@@ -90,6 +113,17 @@ class FakeSession:
 
     def refresh(self, obj):
         return None
+
+    def execute(self, statement, params=None):
+        statement_text = str(statement)
+        for marker, payload in self.execute_results.items():
+            if marker in statement_text:
+                if callable(payload):
+                    resolved_payload = payload(params or {})
+                else:
+                    resolved_payload = payload
+                return FakeExecuteResult(resolved_payload)
+        raise AssertionError(f"Unsupported SQL statement: {statement_text}")
 
 
 def _override_db(fake_session):
@@ -267,3 +301,107 @@ def test_order_status_lifecycle_transitions_are_controlled():
     assert shipped_response.status_code == 200
     assert delivered_response.status_code == 200
     assert invalid_response.status_code == 403
+
+
+def test_data_sales_metrics_endpoint_returns_aggregates():
+    fake_db = FakeSession(
+        execute_results={
+            "FROM v_sales_summary v": {
+                "total_revenue": 1542.7,
+                "average_basket": 31.48,
+                "total_orders": 49,
+            }
+        }
+    )
+
+    app.dependency_overrides[get_db] = _override_db(fake_db)
+    response = client.get("/api/v1/data/sales-metrics")
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total_revenue"] == 1542.7
+    assert payload["average_basket"] == 31.48
+    assert payload["total_orders"] == 49
+
+
+def test_data_customers_clustering_endpoint_returns_latest_segments():
+    run_id = 12
+    user_id = uuid.uuid4()
+
+    fake_db = FakeSession(
+        execute_results={
+            "FROM clustering_runs": {"run_id": run_id, "n_clusters": 4},
+            "FROM customer_segments\nWHERE run_id = :run_id": lambda params: {
+                "segments_count": 1,
+            },
+            "FROM customer_segments cs": [
+                {
+                    "user_id": user_id,
+                    "cluster_id": 2,
+                    "cluster_label": "Fideles premium",
+                    "recency_days": 7,
+                    "frequency": 8,
+                    "monetary": 240.5,
+                    "avg_basket": 30.06,
+                    "favorite_category": "fruits",
+                    "cancellation_rate": 0.0,
+                    "days_since_registration": 120,
+                    "email": "client.segment@example.com",
+                    "first_name": "Alice",
+                    "last_name": "Martin",
+                }
+            ],
+        }
+    )
+
+    app.dependency_overrides[get_db] = _override_db(fake_db)
+    response = client.get("/api/v1/data/clustering/customers")
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["run_id"] == run_id
+    assert payload["n_clusters"] == 4
+    assert payload["segments_count"] == 1
+    assert len(payload["segments"]) == 1
+    assert payload["segments"][0]["cluster_label"] == "Fideles premium"
+
+
+def test_data_anomalies_endpoint_returns_failed_payments():
+    payment_id = uuid.uuid4()
+    order_id = uuid.uuid4()
+    client_id = uuid.uuid4()
+
+    fake_db = FakeSession(
+        execute_results={
+            "FROM payments p\nWHERE p.status = 'failed' OR p.is_simulated_error = TRUE": {
+                "total_anomalies": 1,
+            },
+            "FROM payments p\nJOIN orders o ON o.id = p.order_id": [
+                {
+                    "payment_id": payment_id,
+                    "order_id": order_id,
+                    "client_id": client_id,
+                    "client_email": "fraud.alert@example.com",
+                    "amount": 89.9,
+                    "payment_status": "failed",
+                    "order_status": "draft",
+                    "is_simulated_error": True,
+                    "detected_at": datetime.utcnow(),
+                    "anomaly_type": "simulated_payment_error",
+                }
+            ],
+        }
+    )
+
+    app.dependency_overrides[get_db] = _override_db(fake_db)
+    response = client.get("/api/v1/data/anomalies")
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total_anomalies"] == 1
+    assert len(payload["anomalies"]) == 1
+    assert payload["anomalies"][0]["payment_status"] == "failed"
+    assert payload["anomalies"][0]["anomaly_type"] == "simulated_payment_error"

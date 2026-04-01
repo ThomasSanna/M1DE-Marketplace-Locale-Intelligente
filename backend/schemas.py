@@ -159,3 +159,51 @@ class PaymentErrorResponse(BaseModel):
     retryable: bool
     order_id: UUID
     provider_reference: str
+
+
+# ---- Analytics Schemas ---- #
+class SalesMetricsResponse(BaseModel):
+    total_revenue: float
+    average_basket: float
+    total_orders: int
+
+
+class CustomerClusterSegment(BaseModel):
+    user_id: UUID
+    cluster_id: int
+    cluster_label: str
+    recency_days: Optional[int] = None
+    frequency: Optional[int] = None
+    monetary: Optional[float] = None
+    avg_basket: Optional[float] = None
+    favorite_category: Optional[str] = None
+    cancellation_rate: Optional[float] = None
+    days_since_registration: Optional[int] = None
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+
+class CustomerClusteringResponse(BaseModel):
+    run_id: Optional[int] = None
+    n_clusters: int = 0
+    segments_count: int = 0
+    segments: List[CustomerClusterSegment] = Field(default_factory=list)
+
+
+class AnomalyItem(BaseModel):
+    payment_id: UUID
+    order_id: UUID
+    client_id: UUID
+    client_email: Optional[EmailStr] = None
+    amount: float
+    payment_status: str
+    order_status: str
+    is_simulated_error: bool
+    detected_at: datetime
+    anomaly_type: str
+
+
+class AnomaliesResponse(BaseModel):
+    total_anomalies: int = 0
+    anomalies: List[AnomalyItem] = Field(default_factory=list)
