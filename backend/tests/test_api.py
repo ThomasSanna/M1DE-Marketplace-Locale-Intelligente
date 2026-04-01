@@ -112,6 +112,19 @@ def test_root_returns_welcome_message():
     assert "message" in response.json()
 
 
+def test_metrics_endpoint_exposes_prometheus_metrics():
+    client.get("/")
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "text/plain" in response.headers["content-type"]
+    body = response.text
+    assert "http_request_duration_seconds" in body
+    assert "http_requests_total" in body
+    assert "http_requests_success_total" in body
+    assert "http_requests_error_total" in body
+
+
 def test_create_order_returns_draft_with_items():
     product = models.Product(
         id=uuid.uuid4(),
