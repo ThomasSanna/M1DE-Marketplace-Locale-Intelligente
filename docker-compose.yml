@@ -12,6 +12,7 @@
       - ./data/schema/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
       - ./data/schema/002_clustering_tables.sql:/docker-entrypoint-initdb.d/02_clustering.sql:ro
       - ./data/schema/003_anomaly_tables.sql:/docker-entrypoint-initdb.d/03_anomalies.sql:ro
+      - ./data/schema/004_readonly_access.sql:/docker-entrypoint-initdb.d/04_readonly_access.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s

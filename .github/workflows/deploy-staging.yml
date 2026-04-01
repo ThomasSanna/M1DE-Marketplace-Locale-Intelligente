@@ -89,7 +89,7 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_PORT || 22 }}
-          source: "docker-compose.staging.yml,data/schema/schema.sql"
+          source: "docker-compose.staging.yml,data/schema/schema.sql,data/schema/002_clustering_tables.sql,data/schema/003_anomaly_tables.sql,data/schema/004_readonly_access.sql"
           target: ${{ secrets.STAGING_APP_DIR }}
           overwrite: true
 
