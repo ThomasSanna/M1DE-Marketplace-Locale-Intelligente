@@ -30,7 +30,7 @@ Le backend expose deja `/metrics` avec:
 
 ## Dashboards fournis
 ### 1) Marketplace SRE - API Overview
-- Disponibilite API (5m)
+- Disponibilite API (1h)
 - Latence p90 `POST /api/v1/orders`
 - Taux erreur `POST /api/v1/payments`
 - Trafic HTTP par route/status
@@ -90,7 +90,7 @@ La sortie doit contenir des metriques comme:
 - Les jobs `marketplace-backend` et `prometheus` doivent etre `UP`.
 
 ### 4) Generer du trafic pour remplir les dashboards
-Sans trafic, certains panneaux restent a `No data` ou retombent a `0%` (fenetre glissante `rate(...[5m])`).
+Sans trafic, certains panneaux peuvent rester a `No data` ou retomber a `0%`.
 
 Exemple PowerShell:
 ```powershell
@@ -114,8 +114,8 @@ Pour tester le taux d'erreur `POST /api/v1/payments`, il faut appeler cette rout
 ## Interpretation des valeurs
 - `No data`: pas assez de points pour la requete (souvent pas de trafic sur la route cible).
 - `0%` sur disponibilite/taux erreur: possible quand il n'y a plus de trafic recent.
-- Valeurs qui changent vite: normal avec peu de requetes et une fenetre `[5m]`.
-- `401` sur `/api/v1/payments`: compte comme erreur metier dans le dashboard actuel (4xx/5xx).
+- Valeurs qui changent vite: normal avec peu de requetes.
+- Le taux d'erreurs paiements suit les erreurs techniques `5xx` (pas les `401`).
 
 ## Depannage rapide
 ### Dashboards absents dans Grafana
@@ -140,3 +140,6 @@ docker compose logs prometheus --tail=200
 docker compose restart prometheus
 ```
 
+## Lien avec la formalisation SLI/SLO/SLA
+La politique d'exploitation SRE (SLI, SLO, SLA, error budget, alertes Prometheus) est detaillee dans:
+- `docs/sprint3_sli_slo_sla.md`
