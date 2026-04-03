@@ -127,7 +127,7 @@
       "options": {"legend": {"showLegend": true}, "tooltip": {"mode": "single"}},
       "targets": [
         {
-          "expr": "sum(increase(http_requests_total{method=\"POST\",path=\"/api/v1/payments\",status_code=~\"4..|5..\"}[1h])) / clamp_min(sum(increase(http_requests_total{method=\"POST\",path=\"/api/v1/payments\"}[1h])), 1)",
+          "expr": "sum(increase(http_requests_total{method=\"POST\",path=\"/api/v1/payments\",status_code=~\"5..\"}[1h])) / clamp_min(sum(increase(http_requests_total{method=\"POST\",path=\"/api/v1/payments\"}[1h])), 1)",
           "legendFormat": "Taux erreur paiements",
           "refId": "A"
         },
