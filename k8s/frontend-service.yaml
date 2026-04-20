@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: marketplace-frontend
+  namespace: marketplace-staging
+  labels:
+    app: marketplace-frontend
+spec:
+  type: LoadBalancer
+  selector:
+    app: marketplace-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
