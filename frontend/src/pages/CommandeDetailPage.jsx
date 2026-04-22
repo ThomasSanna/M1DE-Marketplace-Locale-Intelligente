@@ -4,8 +4,10 @@ import { Package, ArrowLeft, CheckCircle, Clock, Truck, XCircle } from "lucide-r
 import { getOrderById } from "../api/orders";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
+import ErrorState from "../components/ui/ErrorState";
 import Layout from "../components/Layout";
 import { getCategoryImage } from "../lib/categoryImages";
+import { getErrorMessage } from "../api/errors";
 
 const STATUS_MAP = {
   draft:     { label: "Brouillon",  variant: "default",  Icon: Clock },
@@ -27,11 +29,7 @@ export default function CommandeDetailPage() {
   useEffect(() => {
     getOrderById(id)
       .then((res) => setOrder(res.data))
-      .catch((err) => {
-        if (err.response?.status === 404) setError("Commande introuvable.");
-        else if (err.response?.status === 403) setError("Vous n'avez pas accès à cette commande.");
-        else setError("Impossible de charger la commande.");
-      })
+      .catch((err) => setError(getErrorMessage(err, "Impossible de charger la commande.")))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -50,12 +48,13 @@ export default function CommandeDetailPage() {
   if (error) {
     return (
       <Layout>
-        <div className="text-center py-24 max-w-md mx-auto">
-          <Package className="h-16 w-16 text-gray-200 mx-auto mb-4" />
-          <p className="text-red-500 mb-6">{error}</p>
-          <Button variant="outline" onClick={() => navigate("/mes-commandes")}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Retour aux commandes
-          </Button>
+        <div className="max-w-md mx-auto">
+          <ErrorState message={error} />
+          <div className="text-center">
+            <Button variant="outline" onClick={() => navigate("/mes-commandes")}>
+              <ArrowLeft className="h-4 w-4 mr-2" /> Retour aux commandes
+            </Button>
+          </div>
         </div>
       </Layout>
     );

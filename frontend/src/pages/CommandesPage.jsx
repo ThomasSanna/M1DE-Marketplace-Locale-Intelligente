@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, ChevronRight } from "lucide-react";
 import { getOrders } from "../api/orders";
 import { useAuth } from "../context/AuthContext";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
+import ErrorState from "../components/ui/ErrorState";
 import Layout from "../components/Layout";
+import { getErrorMessage } from "../api/errors";
 
 const STATUS_MAP = {
   draft:     { label: "Brouillon",  variant: "default" },
@@ -22,13 +24,19 @@ export default function CommandesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!authLoading && !user) { navigate("/login"); return; }
+  const fetchOrders = useCallback(() => {
+    setLoading(true);
+    setError("");
     getOrders()
       .then((res) => setOrders(res.data))
-      .catch(() => setError("Impossible de charger vos commandes"))
+      .catch((err) => setError(getErrorMessage(err, "Impossible de charger vos commandes.")))
       .finally(() => setLoading(false));
-  }, [user, authLoading, navigate]);
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && !user) { navigate("/login"); return; }
+    if (!authLoading && user) fetchOrders();
+  }, [user, authLoading, navigate, fetchOrders]);
 
   return (
     <Layout>
@@ -45,7 +53,7 @@ export default function CommandesPage() {
         </div>
       )}
 
-      {error && <p className="text-red-500 text-center py-16">{error}</p>}
+      {error && <ErrorState message={error} onRetry={fetchOrders} />}
 
       {!loading && !error && orders.length === 0 && (
         <div className="text-center py-16">

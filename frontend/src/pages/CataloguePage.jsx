@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Search, Filter, ShoppingCart, MapPin } from "lucide-react";
 import { getProducts } from "../api/products";
 import { useCart } from "../context/CartContext";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
+import ErrorState from "../components/ui/ErrorState";
 import Layout from "../components/Layout";
 import { getCategoryImage } from "../lib/categoryImages";
+import { getErrorMessage } from "../api/errors";
 
 const CATEGORIES = [
   { value: "", label: "Toutes" },
@@ -88,13 +90,16 @@ export default function CataloguePage() {
   const [category, setCategory] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const fetchProducts = useCallback(() => {
     setLoading(true);
+    setError("");
     getProducts()
       .then((res) => setProducts(res.data))
-      .catch(() => setError("Impossible de charger les produits"))
+      .catch((err) => setError(getErrorMessage(err, "Impossible de charger les produits.")))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   const filtered = products.filter((p) => {
     const matchSearch =
@@ -152,12 +157,7 @@ export default function CataloguePage() {
         </div>
       )}
 
-      {error && (
-        <div className="text-center py-16">
-          <p className="text-red-500 mb-4">{error}</p>
-          <Button variant="outline" onClick={() => window.location.reload()}>Réessayer</Button>
-        </div>
-      )}
+      {error && <ErrorState message={error} onRetry={fetchProducts} />}
 
       {!loading && !error && (
         <>

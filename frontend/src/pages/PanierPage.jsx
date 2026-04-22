@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Plus, Minus, ShoppingCart } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingCart, RefreshCw } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { createOrder, processPayment } from "../api/orders";
 import { Button } from "../components/ui/Button";
 import Layout from "../components/Layout";
 import { getCategoryImage } from "../lib/categoryImages";
+import { getErrorMessage, isRetryable } from "../api/errors";
 
 export default function PanierPage() {
   const { items, removeItem, updateQuantity, clearCart, totalPrice } = useCart();
@@ -14,39 +15,36 @@ export default function PanierPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [canRetry, setCanRetry] = useState(false);
   const [success, setSuccess] = useState("");
 
   const handleCheckout = async () => {
     if (!user) return navigate("/login");
     setError("");
+    setCanRetry(false);
     setLoading(true);
     try {
-      // Construit le payload de la commande
       const orderPayload = {
-        items: items.map((i) => ({
-          product_id: i.product.id,
-          quantity: i.quantity,
-          unit_price: i.product.price,
-        })),
+        items: items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })),
       };
 
-      // 1. Crée la commande (brouillon)
       const orderRes = await createOrder(orderPayload);
       const order = orderRes.data;
 
-      // 2. Simulation du paiement
       const payRes = await processPayment(order.id);
       const payment = payRes.data;
 
       if (payment.status === "success") {
-        setSuccess("✅ Commande validée ! Votre paiement a été accepté.");
+        setSuccess("Commande validée ! Votre paiement a été accepté.");
         clearCart();
         setTimeout(() => navigate("/mes-commandes"), 2500);
       } else {
-        setError("❌ Le paiement a été refusé. Veuillez réessayer.");
+        setError("Le paiement a été refusé. Veuillez réessayer.");
+        setCanRetry(true);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Une erreur est survenue lors du paiement.");
+      setError(getErrorMessage(err, "Une erreur est survenue lors du paiement."));
+      setCanRetry(isRetryable(err));
     } finally {
       setLoading(false);
     }
@@ -155,7 +153,15 @@ export default function PanierPage() {
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">
-                {error}
+                <p>{error}</p>
+                {canRetry && (
+                  <button
+                    onClick={handleCheckout}
+                    className="mt-2 flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-800 underline"
+                  >
+                    <RefreshCw className="h-3 w-3" /> Réessayer le paiement
+                  </button>
+                )}
               </div>
             )}
 
