@@ -28,7 +28,7 @@ export default function App() {
         <Route path="/producteurs" element={<ProducteursPage />} />
 
         {/* Pages protégées */}
-        <Route path="/panier" element={<PanierPage />} />
+        <Route path="/panier" element={<PrivateRoute><PanierPage /></PrivateRoute>} />
         <Route path="/mes-commandes" element={<PrivateRoute><CommandesPage /></PrivateRoute>} />
         <Route path="/commandes/:id" element={<PrivateRoute><CommandeDetailPage /></PrivateRoute>} />
 

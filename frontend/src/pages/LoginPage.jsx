@@ -4,6 +4,7 @@ import { Store } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { getErrorMessage } from "../api/errors";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -22,10 +23,9 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const user = await login(form.email, form.password);
-      // Redirige selon le rôle
-      navigate(user.role === "producer" ? "/dashboard" : "/catalogue");
+      navigate(user.role === "producer" ? "/catalogue" : "/catalogue");
     } catch (err) {
-      setError(err.response?.data?.detail || "Email ou mot de passe incorrect");
+      setError(getErrorMessage(err, "Email ou mot de passe incorrect."));
     } finally {
       setLoading(false);
     }
