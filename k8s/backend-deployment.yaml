@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketplace-backend
+  namespace: marketplace-staging
+  labels:
+    app: marketplace-backend
+spec:
+  # Base de replicas choisie apres tests de charge Sprint 4.
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: marketplace-backend
+  template:
+    metadata:
+      labels:
+        app: marketplace-backend
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/thomassanna/m1de-marketplace-locale-intelligente/backend:dev-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: marketplace-backend-config
+                  key: POSTGRES_HOST
+            - name: POSTGRES_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: marketplace-backend-config
+                  key: POSTGRES_PORT
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: marketplace-backend-config
+                  key: POSTGRES_DB
+            - name: ACCESS_TOKEN_EXPIRE_MINUTES
+              valueFrom:
+                configMapKeyRef:
+                  name: marketplace-backend-config
+                  key: ACCESS_TOKEN_EXPIRE_MINUTES
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: marketplace-backend-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: marketplace-backend-secret
+                  key: POSTGRES_PASSWORD
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: marketplace-backend-secret
+                  key: SECRET_KEY
+            - name: DATABASE_URL
+              value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)
+          # Requests/limits ajustes pour laisser de la marge sous charge.
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: http
+            initialDelaySeconds: 8
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 3

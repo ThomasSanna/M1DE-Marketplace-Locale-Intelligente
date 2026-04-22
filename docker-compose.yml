@@ -1,4 +1,5 @@
 ﻿services:
+  # Base de donnees locale pour developpement et tests.
   postgres:
     image: postgres:16-alpine
     container_name: marketplace_db
@@ -7,13 +8,18 @@
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Charge le schema SQL au premier demarrage du volume postgres.
       - ./data/schema/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./data/schema/002_clustering_tables.sql:/docker-entrypoint-initdb.d/02_clustering.sql:ro
+      - ./data/schema/003_anomaly_tables.sql:/docker-entrypoint-initdb.d/03_anomalies.sql:ro
+      - ./data/schema/004_readonly_access.sql:/docker-entrypoint-initdb.d/04_readonly_access.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # API FastAPI locale (build depuis ./backend).
   backend:
     build:
       context: ./backend
@@ -24,12 +30,15 @@
         condition: service_healthy
     env_file: .env
     environment:
+      # Prioritaire: URL de connexion complete pour SQLAlchemy.
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      # Variable utilisee en fallback dans database.py.
       POSTGRES_HOST: postgres
     ports:
       - "8000:8000"
     restart: unless-stopped
 
+  # Frontend React servi par Nginx (build depuis ./frontend).
   frontend:
     build:
       context: ./frontend
@@ -41,5 +50,47 @@
       - "3000:80"
     restart: unless-stopped
 
+  # Prometheus collecte les metriques exposees par le backend (/metrics).
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: marketplace_prometheus
+    depends_on:
+      - backend
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/sli_slo_rules.yml:/etc/prometheus/rules/sli_slo_rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  # Grafana visualise les metriques Prometheus via dashboards provisionnes.
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: marketplace_grafana
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+
 volumes:
+  # Conserve les donnees PostgreSQL entre les redemarrages.
   postgres_data:
+  # Conserve les metriques Prometheus.
+  prometheus_data:
+  # Conserve la base interne Grafana (users, prefs, etc.).
+  grafana_data:

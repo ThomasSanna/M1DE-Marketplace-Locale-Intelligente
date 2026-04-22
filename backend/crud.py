@@ -81,3 +81,82 @@ def delete_product(db: Session, product_id: UUID):
         db.delete(db_product)
         db.commit()
     return db_product
+
+
+# ---- Order CRUD ---- #
+
+def create_order(db: Session, order: schemas.OrderCreate, client_id: UUID):
+    """Creates a draft order from cart items. Validates stock availability."""
+    # Validate all products and stock first
+    for item in order.items:
+        product = get_product(db, item.product_id)
+        if not product:
+            raise ValueError(f"Produit introuvable : {item.product_id}")
+        if not product.is_active:
+            raise ValueError(f"Le produit '{product.name}' n'est plus disponible")
+        if float(product.stock_quantity) < item.quantity:
+            raise ValueError(f"Stock insuffisant pour '{product.name}' (disponible : {product.stock_quantity} {product.unit})")
+
+    db_order = models.Order(client_id=client_id, total_amount=0)
+    db.add(db_order)
+    db.flush()
+
+    total = 0.0
+    for item in order.items:
+        product = get_product(db, item.product_id)
+        unit_price = float(product.price)
+        db_item = models.OrderItem(
+            order_id=db_order.id,
+            product_id=item.product_id,
+            quantity=item.quantity,
+            unit_price_snapshot=unit_price,
+        )
+        db.add(db_item)
+        total += unit_price * item.quantity
+
+    db_order.total_amount = round(total, 2)
+    db.commit()
+    db.refresh(db_order)
+    return db_order
+
+
+def get_orders_by_user(db: Session, client_id: UUID):
+    return (
+        db.query(models.Order)
+        .filter(models.Order.client_id == client_id)
+        .order_by(models.Order.created_at.desc())
+        .all()
+    )
+
+
+def get_order(db: Session, order_id: UUID):
+    return db.query(models.Order).filter(models.Order.id == order_id).first()
+
+
+def process_payment(db: Session, order_id: UUID):
+    """Simulates payment: confirms order, deducts stock, creates Payment record."""
+    db_order = get_order(db, order_id)
+    if not db_order:
+        return None
+
+    # Create payment record
+    db_payment = models.Payment(
+        order_id=order_id,
+        amount=db_order.total_amount,
+        status=models.PaymentStatus.success,
+    )
+    db.add(db_payment)
+
+    # Confirm order
+    db_order.status = models.OrderStatus.confirmed
+    db_order.confirmed_at = datetime.utcnow()
+
+    # Deduct stock
+    for item in db_order.items:
+        product = get_product(db, item.product_id)
+        if product:
+            product.stock_quantity = float(product.stock_quantity) - float(item.quantity)
+
+    db.commit()
+    db.refresh(db_payment)
+    return db_payment

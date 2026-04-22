@@ -4,6 +4,7 @@ import { Store } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { getErrorMessage } from "../api/errors";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -31,7 +32,7 @@ export default function RegisterPage() {
       await register(form);
       navigate("/login");
     } catch (err) {
-      setError(err.response?.data?.detail || "Erreur lors de l'inscription");
+      setError(getErrorMessage(err, "Erreur lors de l'inscription."));
     } finally {
       setLoading(false);
     }

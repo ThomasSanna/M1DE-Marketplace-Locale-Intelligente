@@ -1,20 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, ArrowRight } from "lucide-react";
 import { getProducers } from "../api/products";
+import ErrorState from "../components/ui/ErrorState";
 import Layout from "../components/Layout";
+import { getErrorMessage } from "../api/errors";
 
 export default function ProducteursPage() {
   const [producers, setProducers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const fetchProducers = useCallback(() => {
+    setLoading(true);
+    setError("");
     getProducers()
       .then((res) => setProducers(res.data))
-      .catch(() => setError("Impossible de charger les producteurs"))
+      .catch((err) => setError(getErrorMessage(err, "Impossible de charger les producteurs.")))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { fetchProducers(); }, [fetchProducers]);
 
   return (
     <Layout>
@@ -31,7 +37,7 @@ export default function ProducteursPage() {
         </div>
       )}
 
-      {error && <p className="text-red-500 text-center py-16">{error}</p>}
+      {error && <ErrorState message={error} onRetry={fetchProducers} />}
 
       {!loading && !error && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

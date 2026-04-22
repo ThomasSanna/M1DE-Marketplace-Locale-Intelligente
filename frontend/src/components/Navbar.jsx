@@ -34,9 +34,9 @@ export default function Navbar() {
             <Link to="/producteurs" className="text-sm text-gray-600 hover:text-primary-600 font-medium transition-colors">
               Producteurs
             </Link>
-            {user?.role === "producer" && (
-              <Link to="/dashboard" className="text-sm text-gray-600 hover:text-primary-600 font-medium transition-colors">
-                Mon Dashboard
+            {user && (
+              <Link to="/mes-commandes" className="text-sm text-gray-600 hover:text-primary-600 font-medium transition-colors">
+                Mes commandes
               </Link>
             )}
           </nav>
@@ -55,10 +55,10 @@ export default function Navbar() {
 
             {user ? (
               <div className="flex items-center gap-2">
-                <Link to="/profil" className="flex items-center gap-1 text-sm text-gray-700 hover:text-primary-600">
+                <span className="flex items-center gap-1 text-sm text-gray-700">
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">{user.first_name}</span>
-                </Link>
+                </span>
                 <button
                   onClick={handleLogout}
                   className="p-2 text-gray-500 hover:text-red-600 transition-colors"
