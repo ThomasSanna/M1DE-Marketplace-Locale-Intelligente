@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Package, ArrowLeft, CheckCircle, Clock, Truck, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, Truck, XCircle } from "lucide-react";
 import { getOrderById } from "../api/orders";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
