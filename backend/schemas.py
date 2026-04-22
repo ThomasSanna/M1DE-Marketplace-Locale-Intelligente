@@ -1,8 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import datetime
 from uuid import UUID
-from models import UserRole, ProductCategory, ProductUnit
+from models import UserRole, ProductCategory, ProductUnit, PaymentStatus, OrderStatus
 
 class Token(BaseModel):
     access_token: str
@@ -90,8 +90,10 @@ class OrderItemCreate(BaseModel):
     product_id: UUID
     quantity: float = Field(..., gt=0)
 
+
 class OrderCreate(BaseModel):
     items: List[OrderItemCreate] = Field(..., min_length=1)
+
 
 class ProductSummary(BaseModel):
     id: UUID
@@ -100,6 +102,7 @@ class ProductSummary(BaseModel):
     unit: str
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class OrderItemResponse(BaseModel):
     id: UUID
@@ -110,10 +113,11 @@ class OrderItemResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class OrderResponse(BaseModel):
     id: UUID
     client_id: UUID
-    status: str
+    status: OrderStatus
     total_amount: float
     created_at: datetime
     updated_at: datetime
@@ -123,14 +127,93 @@ class OrderResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-class PaymentCreate(BaseModel):
-    order_id: UUID
 
-class PaymentResponse(BaseModel):
-    id: UUID
+class OrderStatusUpdate(BaseModel):
+    status: OrderStatus
+
+
+# ---- Payment Schemas ---- #
+PaymentSimulationScenario = Literal[
+    "auto",
+    "success",
+    "insufficient_funds",
+    "provider_timeout",
+    "fraud_suspected",
+    "network_error",
+]
+
+
+class PaymentSimulationRequest(BaseModel):
     order_id: UUID
+    payment_method: Literal["card", "wallet", "bank_transfer"] = "card"
+    idempotency_key: Optional[str] = Field(default=None, min_length=8, max_length=64)
+    simulate_scenario: PaymentSimulationScenario = "auto"
+    processing_delay_ms: int = Field(default=120, ge=0, le=2000)
+
+
+class PaymentSimulationResponse(BaseModel):
+    payment_id: UUID
+    order_id: UUID
+    status: PaymentStatus
+    order_status: OrderStatus
     amount: float
-    status: str
-    created_at: datetime
+    idempotency_key: Optional[str] = None
+    simulated_latency_ms: int
+    retryable: bool = False
+    provider_reference: str
 
-    model_config = ConfigDict(from_attributes=True)
+
+class PaymentErrorResponse(BaseModel):
+    error_code: str
+    message: str
+    retryable: bool
+    order_id: UUID
+    provider_reference: str
+
+
+# ---- Analytics Schemas ---- #
+class SalesMetricsResponse(BaseModel):
+    total_revenue: float
+    average_basket: float
+    total_orders: int
+
+
+class CustomerClusterSegment(BaseModel):
+    user_id: UUID
+    cluster_id: int
+    cluster_label: str
+    recency_days: Optional[int] = None
+    frequency: Optional[int] = None
+    monetary: Optional[float] = None
+    avg_basket: Optional[float] = None
+    favorite_category: Optional[str] = None
+    cancellation_rate: Optional[float] = None
+    days_since_registration: Optional[int] = None
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+
+class CustomerClusteringResponse(BaseModel):
+    run_id: Optional[int] = None
+    n_clusters: int = 0
+    segments_count: int = 0
+    segments: List[CustomerClusterSegment] = Field(default_factory=list)
+
+
+class AnomalyItem(BaseModel):
+    payment_id: UUID
+    order_id: UUID
+    client_id: UUID
+    client_email: Optional[EmailStr] = None
+    amount: float
+    payment_status: str
+    order_status: str
+    is_simulated_error: bool
+    detected_at: datetime
+    anomaly_type: str
+
+
+class AnomaliesResponse(BaseModel):
+    total_anomalies: int = 0
+    anomalies: List[AnomalyItem] = Field(default_factory=list)

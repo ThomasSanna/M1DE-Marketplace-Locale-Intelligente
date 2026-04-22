@@ -1,0 +1,81 @@
+groups:
+  - name: marketplace_sli_recording
+    rules:
+      - record: sli:api_availability_ratio_1h
+        expr: |
+          sum(increase(http_requests_success_total[1h]))
+          /
+          clamp_min(sum(increase(http_requests_total[1h])), 1)
+
+      - record: sli:api_availability_ratio_24h
+        expr: |
+          sum(increase(http_requests_success_total[24h]))
+          /
+          clamp_min(sum(increase(http_requests_total[24h])), 1)
+
+      - record: sli:orders_latency_p90_seconds_1h
+        expr: |
+          histogram_quantile(0.90, sum(increase(http_request_duration_seconds_bucket{method="POST",path="/api/v1/orders"}[1h])) by (le))
+
+      - record: sli:payments_error_ratio_1h
+        expr: |
+          sum(increase(http_requests_total{method="POST",path="/api/v1/payments",status_code=~"5.."}[1h]))
+          /
+          clamp_min(sum(increase(http_requests_total{method="POST",path="/api/v1/payments"}[1h])), 1)
+
+      - record: slo:api_availability_target_ratio
+        expr: 0.995
+
+      - record: slo:orders_latency_target_seconds
+        expr: 0.3
+
+      - record: slo:payments_error_target_ratio
+        expr: 0.001
+
+      - record: error_budget:api_consumed_ratio_24h
+        expr: |
+          (1 - sli:api_availability_ratio_24h)
+          /
+          (1 - slo:api_availability_target_ratio)
+
+  - name: marketplace_slo_alerts
+    rules:
+      - alert: ApiAvailabilityBelowSLO
+        expr: sli:api_availability_ratio_1h < slo:api_availability_target_ratio
+        for: 10m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Disponibilite API sous le SLO (99.5%)"
+          description: "La disponibilite API sur 1h est sous l'objectif SLO de 99.5%."
+
+      - alert: OrdersLatencyAboveSLO
+        expr: sli:orders_latency_p90_seconds_1h > slo:orders_latency_target_seconds
+        for: 10m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Latence p90 des commandes au-dessus du SLO (300ms)"
+          description: "Le p90 de POST /api/v1/orders depasse 300ms sur 1h."
+
+      - alert: Payments5xxErrorRateAboveSLO
+        expr: sli:payments_error_ratio_1h > slo:payments_error_target_ratio
+        for: 10m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Taux d'erreurs techniques paiements au-dessus du SLO (0.1%)"
+          description: "Le taux 5xx sur POST /api/v1/payments depasse 0.1% sur 1h."
+
+      - alert: ErrorBudgetConsumptionHigh
+        expr: error_budget:api_consumed_ratio_24h > 1
+        for: 15m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "Error budget API depasse"
+          description: "Le budget d'erreur API sur 24h est consomme a plus de 100%."

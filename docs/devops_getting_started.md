@@ -20,6 +20,7 @@ docker compose up --build -d
 Services exposes :
 - API backend : `http://localhost:8000`
 - Documentation API : `http://localhost:8000/docs`
+- Frontend : `http://localhost:3000`
 - PostgreSQL : `localhost:5432`
 
 ## 3. Verifier l'etat des conteneurs
@@ -47,5 +48,3 @@ Le workflow `.github/workflows/ci.yml` lance :
 3. Smoke test d'import FastAPI
 4. Tests unitaires `pytest`
 5. Build Docker de l'image backend
-
-Pour finaliser GitFlow Sprint 1, configurer dans GitHub les protections de branches (`main`, `develop`) en suivant `docs/gitflow_pr_rules.md`.

@@ -149,6 +149,7 @@ docker compose logs frontend --tail=100
 - Backend API: <http://localhost:8000>
 - Swagger UI: <http://localhost:8000/docs>
 - ReDoc: <http://localhost:8000/redoc>
+- Metrics Prometheus: <http://localhost:8000/metrics>
 - PostgreSQL: localhost:5432
 
 ### 5. Arrêter l'environnement
