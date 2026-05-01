@@ -201,7 +201,6 @@ def simulate_payment(
     provider_reference = _build_provider_reference()
 
     if scenario == "success":
-        # Stock debit is applied only when payment succeeds.
         for item in order_items:
             product = item.product
             if product is None:

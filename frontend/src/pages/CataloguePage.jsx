@@ -1,21 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Search, Filter, ShoppingCart, MapPin } from "lucide-react";
 import { getProducts } from "../api/products";
 import { useCart } from "../context/CartContext";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
+import ErrorState from "../components/ui/ErrorState";
 import Layout from "../components/Layout";
+import { getCategoryImage } from "../lib/categoryImages";
+import { getErrorMessage } from "../api/errors";
 
 const CATEGORIES = [
   { value: "", label: "Toutes" },
-  { value: "fruits", label: "🍎 Fruits" },
-  { value: "legumes", label: "🥦 Légumes" },
-  { value: "viandes", label: "🥩 Viandes" },
-  { value: "poissons", label: "🐟 Poissons" },
-  { value: "produits_laitiers", label: "🧀 Laitiers" },
-  { value: "epicerie", label: "🫙 Épicerie" },
-  { value: "boissons", label: "🥤 Boissons" },
-  { value: "autres", label: "📦 Autres" },
+  { value: "fruits", label: "Fruits" },
+  { value: "legumes", label: "Légumes" },
+  { value: "viandes", label: "Viandes" },
+  { value: "poissons", label: "Poissons" },
+  { value: "produits_laitiers", label: "Laitiers" },
+  { value: "epicerie", label: "Épicerie" },
+  { value: "boissons", label: "Boissons" },
+  { value: "autres", label: "Autres" },
 ];
 
 function ProductCard({ product }) {
@@ -30,11 +33,14 @@ function ProductCard({ product }) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-      {/* Image placeholder */}
-      <div className="h-44 bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center">
-        <span className="text-5xl">
-          {{ fruits: "🍎", legumes: "🥦", viandes: "🥩", poissons: "🐟", produits_laitiers: "🧀", epicerie: "🫙", boissons: "🥤", autres: "📦" }[product.category] || "🛒"}
-        </span>
+      {/* Image produit */}
+      <div className="h-44 overflow-hidden">
+        <img
+          src={getCategoryImage(product.category)}
+          alt={product.name}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
       </div>
 
       <div className="p-4 flex flex-col flex-1">
@@ -84,13 +90,16 @@ export default function CataloguePage() {
   const [category, setCategory] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const fetchProducts = useCallback(() => {
     setLoading(true);
+    setError("");
     getProducts()
       .then((res) => setProducts(res.data))
-      .catch(() => setError("Impossible de charger les produits"))
+      .catch((err) => setError(getErrorMessage(err, "Impossible de charger les produits.")))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   const filtered = products.filter((p) => {
     const matchSearch =
@@ -148,12 +157,7 @@ export default function CataloguePage() {
         </div>
       )}
 
-      {error && (
-        <div className="text-center py-16">
-          <p className="text-red-500 mb-4">{error}</p>
-          <Button variant="outline" onClick={() => window.location.reload()}>Réessayer</Button>
-        </div>
-      )}
+      {error && <ErrorState message={error} onRetry={fetchProducts} />}
 
       {!loading && !error && (
         <>

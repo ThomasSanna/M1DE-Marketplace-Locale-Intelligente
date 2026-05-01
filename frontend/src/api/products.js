@@ -2,7 +2,7 @@ import apiClient from "./client";
 
 // GET /api/v1/products
 export const getProducts = (params = {}) =>
-  apiClient.get("/api/v1/products", { params });
+  apiClient.get("/api/v1/products/", { params });
 
 // GET /api/v1/products/:id
 export const getProductById = (id) =>
@@ -10,7 +10,7 @@ export const getProductById = (id) =>
 
 // POST /api/v1/products  [Auth Producer]
 export const createProduct = (productData) =>
-  apiClient.post("/api/v1/products", productData);
+  apiClient.post("/api/v1/products/", productData);
 
 // PUT /api/v1/products/:id  [Auth Producer]
 export const updateProduct = (id, productData) =>
@@ -22,8 +22,8 @@ export const deleteProduct = (id) =>
 
 // GET /api/v1/producers
 export const getProducers = (params = {}) =>
-  apiClient.get("/api/v1/producers", { params });
+  apiClient.get("/api/v1/producers/", { params });
 
 // GET /api/v1/producers/:id/products
 export const getProducerProducts = (producerId) =>
-  apiClient.get(`/api/v1/producers/${producerId}/products`);
+  apiClient.get(`/api/v1/producers/${producerId}/products/`);

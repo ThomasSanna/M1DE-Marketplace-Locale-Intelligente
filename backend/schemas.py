@@ -95,11 +95,21 @@ class OrderCreate(BaseModel):
     items: List[OrderItemCreate] = Field(..., min_length=1)
 
 
+class ProductSummary(BaseModel):
+    id: UUID
+    name: str
+    category: str
+    unit: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class OrderItemResponse(BaseModel):
     id: UUID
     product_id: UUID
     quantity: float
     unit_price_snapshot: float
+    product: Optional[ProductSummary] = None
 
     model_config = ConfigDict(from_attributes=True)
 
