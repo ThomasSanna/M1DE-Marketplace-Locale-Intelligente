@@ -18,8 +18,16 @@ BEGIN
 END
 $$;
 
--- Acces a la base cible.
-GRANT CONNECT ON DATABASE marketplace_db TO data_readonly;
+-- Acces a la base cible (nom dynamique pour eviter les incoherences env).
+DO
+$$
+BEGIN
+    EXECUTE format(
+        'GRANT CONNECT ON DATABASE %I TO data_readonly',
+        current_database()
+    );
+END
+$$;
 
 -- Acces au schema applicatif.
 GRANT USAGE ON SCHEMA public TO data_readonly;
