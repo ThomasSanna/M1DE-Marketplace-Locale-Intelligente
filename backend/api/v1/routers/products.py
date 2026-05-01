@@ -9,7 +9,7 @@ from api.v1.dependencies import get_current_user
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
-@router.get("/", response_model=List[schemas.ProductResponse])
+@router.get("", response_model=List[schemas.ProductResponse])
 def list_products(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Liste les produits de la marketplace (avec pagination et filtres géographiques/prix)."""
     products = crud.get_products(db, skip=skip, limit=limit)
@@ -23,7 +23,7 @@ def get_product(product_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     return db_product
 
-@router.post("/", response_model=schemas.ProductResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=schemas.ProductResponse, status_code=status.HTTP_201_CREATED)
 def create_product(
     product: schemas.ProductCreate,
     current_user: models.User = Depends(get_current_user),
