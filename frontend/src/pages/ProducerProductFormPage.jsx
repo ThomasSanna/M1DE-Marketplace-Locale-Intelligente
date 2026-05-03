@@ -20,13 +20,25 @@ const CATEGORIES = [
 ];
 
 const UNITS = [
-  { value: "piece", label: "Pièce" },
-  { value: "kg", label: "Kilogramme" },
-  { value: "g", label: "Gramme" },
-  { value: "litre", label: "Litre" },
-  { value: "bouquet", label: "Bouquet" },
-  { value: "boite", label: "Boîte" },
+  { value: "kg", label: "Kilogramme", hint: "Vendu au poids — ex : pommes, viande, légumes" },
+  { value: "g", label: "Gramme", hint: "Petits poids — ex : épices, herbes séchées" },
+  { value: "piece", label: "Pièce", hint: "Vendu à l'unité — ex : œufs, fromages, salades" },
+  { value: "litre", label: "Litre", hint: "Vendu en volume — ex : lait, jus, huile" },
+  { value: "bouquet", label: "Bouquet", hint: "Vendu en bouquet — ex : herbes fraîches, fleurs" },
+  { value: "boite", label: "Boîte", hint: "Vendu en boîte ou pack — ex : barquette d'œufs, conserves" },
 ];
+
+// Suggestion d'unité par défaut selon la catégorie
+const DEFAULT_UNIT_BY_CATEGORY = {
+  fruits: "kg",
+  legumes: "kg",
+  viandes: "kg",
+  poissons: "kg",
+  produits_laitiers: "litre",
+  epicerie: "piece",
+  boissons: "litre",
+  autres: "piece",
+};
 
 const EMPTY_FORM = {
   name: "",
@@ -71,7 +83,14 @@ export default function ProducerProductFormPage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    setForm((prev) => {
+      const next = { ...prev, [name]: type === "checkbox" ? checked : value };
+      // En création : suggère automatiquement une unité adaptée à la catégorie choisie
+      if (!isEdit && name === "category" && DEFAULT_UNIT_BY_CATEGORY[value]) {
+        next.unit = DEFAULT_UNIT_BY_CATEGORY[value];
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -126,6 +145,8 @@ export default function ProducerProductFormPage() {
     );
   }
 
+  const selectedUnitLabel = (UNITS.find((u) => u.value === form.unit)?.label || form.unit).toLowerCase();
+
   return (
     <Layout>
       <div className="max-w-2xl mx-auto">
@@ -179,7 +200,7 @@ export default function ProducerProductFormPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Unité</label>
+              <label className="text-sm font-medium text-gray-700">Unité de vente</label>
               <select
                 name="unit"
                 value={form.unit}
@@ -190,12 +211,19 @@ export default function ProducerProductFormPage() {
                   <option key={u.value} value={u.value}>{u.label}</option>
                 ))}
               </select>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {UNITS.find((u) => u.value === form.unit)?.hint}
+              </p>
             </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 text-xs px-3 py-2 rounded-lg">
+            Le prix et le stock sont exprimés dans la même unité que celle sélectionnée ci-dessus ({selectedUnitLabel}).
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Prix (€)"
+              label={`Prix par ${selectedUnitLabel} (€)`}
               name="price"
               type="number"
               step="0.01"
@@ -206,10 +234,10 @@ export default function ProducerProductFormPage() {
               required
             />
             <Input
-              label="Stock disponible"
+              label={`Stock disponible (en ${selectedUnitLabel})`}
               name="stock_quantity"
               type="number"
-              step="0.001"
+              step={form.unit === "piece" || form.unit === "boite" || form.unit === "bouquet" ? "1" : "0.001"}
               min="0"
               value={form.stock_quantity}
               onChange={handleChange}
