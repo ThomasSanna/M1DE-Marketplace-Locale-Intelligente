@@ -42,6 +42,7 @@ Ces endpoints sont exposés par le Backend développé par Thomas à destination
 * `POST /api/v1/orders` : Transforme le panier Front-end en Commande (Brouillon). Réserve temporairement les stocks.
 * `GET /api/v1/orders` : *[Auth]* Récupération de l'historique des commandes d'un utilisateur.
 * `GET /api/v1/orders/{id}` : Détail d'une commande.
+* `GET /api/v1/orders/producer` : *[Auth Producer]* Liste les commandes contenant au moins un produit du producteur connecté. Filtrage optionnel par statut via `?status=confirmed|shipped|delivered|cancelled`.
 * `POST /api/v1/payments` : **Simulateur de Paiement**. Reçoit l'ID de la commande, simule l'autorisation bancaire (5% d'erreur simulée volontairement pour générer des anomalies), valide la commande et prélève les stocks définitivement.
 * `PATCH /api/v1/orders/{id}/status` : *[Auth Producer]* Mise à jour d'expédition (Validée -> Expédiée).
 

@@ -23,7 +23,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const user = await login(form.email, form.password);
-      navigate(user.role === "producer" ? "/catalogue" : "/catalogue");
+      navigate(user.role === "producer" ? "/dashboard" : "/catalogue");
     } catch (err) {
       setError(getErrorMessage(err, "Email ou mot de passe incorrect."));
     } finally {

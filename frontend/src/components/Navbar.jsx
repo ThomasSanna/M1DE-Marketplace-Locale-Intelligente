@@ -34,9 +34,14 @@ export default function Navbar() {
             <Link to="/producteurs" className="text-sm text-gray-600 hover:text-primary-600 font-medium transition-colors">
               Producteurs
             </Link>
-            {user && (
+            {user && user.role === "client" && (
               <Link to="/mes-commandes" className="text-sm text-gray-600 hover:text-primary-600 font-medium transition-colors">
                 Mes commandes
+              </Link>
+            )}
+            {user && user.role === "producer" && (
+              <Link to="/dashboard" className="text-sm text-gray-600 hover:text-primary-600 font-medium transition-colors">
+                Mon Dashboard
               </Link>
             )}
           </nav>
