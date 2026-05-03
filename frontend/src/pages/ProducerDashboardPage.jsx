@@ -26,8 +26,7 @@ export default function ProducerDashboardPage() {
     try {
       const myProducer = await getMyProducer(user.id);
       if (!myProducer) {
-        setError("Aucun profil producteur n'est associé à votre compte. Contactez l'administrateur.");
-        setLoading(false);
+        navigate("/dashboard/setup", { replace: true });
         return;
       }
       setProducer(myProducer);
@@ -38,7 +37,7 @@ export default function ProducerDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, navigate]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

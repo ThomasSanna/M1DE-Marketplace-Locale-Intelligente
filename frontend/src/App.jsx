@@ -11,6 +11,7 @@ import CommandeDetailPage from './pages/CommandeDetailPage';
 import ProducerDetailPage from './pages/ProducerDetailPage';
 import ProducerDashboardPage from './pages/ProducerDashboardPage';
 import ProducerProductFormPage from './pages/ProducerProductFormPage';
+import ProducerSetupPage from './pages/ProducerSetupPage';
 
 function FullPageSpinner() {
   return (
@@ -53,6 +54,7 @@ export default function App() {
 
         {/* Pages producteur */}
         <Route path="/dashboard" element={<ProducerRoute><ProducerDashboardPage /></ProducerRoute>} />
+        <Route path="/dashboard/setup" element={<ProducerRoute><ProducerSetupPage /></ProducerRoute>} />
         <Route path="/dashboard/produits/new" element={<ProducerRoute><ProducerProductFormPage /></ProducerRoute>} />
         <Route path="/dashboard/produits/:id/edit" element={<ProducerRoute><ProducerProductFormPage /></ProducerRoute>} />
 
