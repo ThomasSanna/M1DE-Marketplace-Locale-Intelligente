@@ -22,6 +22,12 @@ class FakeQuery:
     def filter(self, *args, **kwargs):
         return self
 
+    def join(self, *args, **kwargs):
+        return self
+
+    def distinct(self):
+        return self
+
     def order_by(self, *args, **kwargs):
         return self
 
@@ -405,3 +411,66 @@ def test_data_anomalies_endpoint_returns_failed_payments():
     assert len(payload["anomalies"]) == 1
     assert payload["anomalies"][0]["payment_status"] == "failed"
     assert payload["anomalies"][0]["anomaly_type"] == "simulated_payment_error"
+
+
+def test_list_producer_orders_returns_orders_for_producer():
+    producer_user_id = uuid.uuid4()
+    producer = models.Producer(
+        id=uuid.uuid4(),
+        user_id=producer_user_id,
+        farm_name="Ferme Bio",
+        location_city="Lyon",
+        location_region="Auvergne-Rhône-Alpes",
+    )
+    order = models.Order(
+        id=uuid.uuid4(),
+        client_id=uuid.uuid4(),
+        status=models.OrderStatus.confirmed,
+        total_amount=Decimal("20.00"),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    order.items = []
+
+    fake_db = FakeSession(orders=[order], producer=producer)
+    producer_user = models.User(
+        id=producer_user_id,
+        email="producer@test.local",
+        password_hash="x",
+        role=models.UserRole.producer,
+        first_name="Prod",
+        last_name="Test",
+    )
+
+    app.dependency_overrides[get_db] = _override_db(fake_db)
+    app.dependency_overrides[get_current_user] = _override_user(producer_user)
+
+    response = client.get("/api/v1/orders/producer")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert len(payload) == 1
+    assert payload[0]["id"] == str(order.id)
+
+
+def test_list_producer_orders_forbidden_for_client():
+    client_user = models.User(
+        id=uuid.uuid4(),
+        email="client@test.local",
+        password_hash="x",
+        role=models.UserRole.client,
+        first_name="Client",
+        last_name="Test",
+    )
+
+    app.dependency_overrides[get_db] = _override_db(FakeSession())
+    app.dependency_overrides[get_current_user] = _override_user(client_user)
+
+    response = client.get("/api/v1/orders/producer")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 403

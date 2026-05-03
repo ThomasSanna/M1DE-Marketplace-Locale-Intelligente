@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit2, Trash2, Package, AlertCircle, MapPin } from "lucide-react";
+import { Plus, Edit2, Trash2, Package, AlertCircle, MapPin, ShoppingBag } from "lucide-react";
 import { getMyProducer, getProducerProducts, deleteProduct } from "../api/products";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui/Button";
@@ -96,6 +96,9 @@ export default function ProducerDashboardPage() {
         </div>
         <Button onClick={() => navigate("/dashboard/produits/new")} className="gap-2">
           <Plus className="h-4 w-4" /> Ajouter un produit
+        </Button>
+        <Button variant="outline" onClick={() => navigate("/dashboard/commandes")} className="gap-2">
+          <ShoppingBag className="h-4 w-4" /> Commandes reçues
         </Button>
       </div>
 

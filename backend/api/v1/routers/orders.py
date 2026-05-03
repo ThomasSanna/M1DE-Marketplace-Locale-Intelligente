@@ -135,6 +135,32 @@ def list_orders(
         query = query.filter(models.Order.status == status_filter)
     return query.order_by(models.Order.created_at.desc()).all()
 
+
+@router.get("/orders/producer", response_model=list[schemas.OrderResponse])
+def list_producer_orders(
+    status_filter: models.OrderStatus | None = Query(default=None, alias="status"),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """[Auth Producer] Liste les commandes contenant au moins un produit du producteur connecté."""
+    if current_user.role != models.UserRole.producer:
+        raise HTTPException(status_code=403, detail="Only producers can access this endpoint")
+
+    producer = crud.get_producer_by_user_id(db, user_id=current_user.id)
+    if producer is None:
+        raise HTTPException(status_code=400, detail="Producer profile not found")
+
+    query = (
+        db.query(models.Order)
+        .join(models.OrderItem, models.OrderItem.order_id == models.Order.id)
+        .join(models.Product, models.Product.id == models.OrderItem.product_id)
+        .filter(models.Product.producer_id == producer.id)
+        .distinct()
+    )
+    if status_filter is not None:
+        query = query.filter(models.Order.status == status_filter)
+    return query.order_by(models.Order.created_at.desc()).all()
+
 @router.get("/orders/{order_id}", response_model=schemas.OrderResponse)
 def get_order(order_id: UUID, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Détail d'une commande."""
