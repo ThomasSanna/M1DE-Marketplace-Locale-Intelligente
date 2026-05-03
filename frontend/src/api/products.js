@@ -27,3 +27,13 @@ export const getProducers = (params = {}) =>
 // GET /api/v1/producers/:id/products
 export const getProducerProducts = (producerId) =>
   apiClient.get(`/api/v1/producers/${producerId}/products`);
+
+// POST /api/v1/producers  [Auth Producer]
+export const createProducerProfile = (producerData) =>
+  apiClient.post("/api/v1/producers", producerData);
+
+// Helper : retrouve le producteur lié au user connecté (via user_id)
+export const getMyProducer = async (userId) => {
+  const res = await getProducers({ limit: 1000 });
+  return res.data.find((p) => p.user_id === userId) || null;
+};
